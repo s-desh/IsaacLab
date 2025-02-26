@@ -83,20 +83,21 @@ class UniformPoseCommand(CommandTerm):
 
         The first three elements correspond to the position, followed by the quaternion orientation in (w, x, y, z).
         """
-        return self.pose_command_b
+        return self.pose_command_w
 
     """
     Implementation specific functions.
     """
 
     def _update_metrics(self):
+        # pass
         # transform command from base frame to simulation world frame
-        self.pose_command_w[:, :3], self.pose_command_w[:, 3:] = combine_frame_transforms(
-            self.robot.data.root_link_pos_w,
-            self.robot.data.root_link_quat_w,
-            self.pose_command_b[:, :3],
-            self.pose_command_b[:, 3:],
-        )
+        # self.pose_command_w[:, :3], self.pose_command_w[:, 3:] = combine_frame_transforms(
+        #     self.robot.data.root_link_pos_w,
+        #     self.robot.data.root_link_quat_w,
+        #     self.pose_command_b[:, :3],
+        #     self.pose_command_b[:, 3:],
+        # )
         # compute the error
         pos_error, rot_error = compute_pose_error(
             self.pose_command_w[:, :3],
@@ -111,17 +112,17 @@ class UniformPoseCommand(CommandTerm):
         # sample new pose targets
         # -- position
         r = torch.empty(len(env_ids), device=self.device)
-        self.pose_command_b[env_ids, 0] = r.uniform_(*self.cfg.ranges.pos_x)
-        self.pose_command_b[env_ids, 1] = r.uniform_(*self.cfg.ranges.pos_y)
-        self.pose_command_b[env_ids, 2] = r.uniform_(*self.cfg.ranges.pos_z)
+        self.pose_command_w[env_ids, 0] = r.uniform_(*self.cfg.ranges.pos_x)
+        self.pose_command_w[env_ids, 1] = r.uniform_(*self.cfg.ranges.pos_y)
+        self.pose_command_w[env_ids, 2] = r.uniform_(*self.cfg.ranges.pos_z)
         # -- orientation
-        euler_angles = torch.zeros_like(self.pose_command_b[env_ids, :3])
+        euler_angles = torch.zeros_like(self.pose_command_w[env_ids, :3])
         euler_angles[:, 0].uniform_(*self.cfg.ranges.roll)
         euler_angles[:, 1].uniform_(*self.cfg.ranges.pitch)
         euler_angles[:, 2].uniform_(*self.cfg.ranges.yaw)
         quat = quat_from_euler_xyz(euler_angles[:, 0], euler_angles[:, 1], euler_angles[:, 2])
         # make sure the quaternion has real part as positive
-        self.pose_command_b[env_ids, 3:] = quat_unique(quat) if self.cfg.make_quat_unique else quat
+        self.pose_command_w[env_ids, 3:] = quat_unique(quat) if self.cfg.make_quat_unique else quat
 
     def _update_command(self):
         pass
