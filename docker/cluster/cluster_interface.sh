@@ -161,7 +161,7 @@ case $command in
         # make sure exports directory exists
         mkdir -p /$SCRIPT_DIR/exports
         # clear old exports for selected profile
-        rm -rf /$SCRIPT_DIR/exports/isaac-lab-$profile*
+        # rm -rf /$SCRIPT_DIR/exports/isaac-lab-$profile*
         # create singularity image
         # NOTE: we create the singularity image as non-root user to allow for more flexibility. If this causes
         # issues, remove the --fakeroot flag and open an issue on the IsaacLab repository.
