@@ -160,6 +160,26 @@ class JointPositionAction(JointAction):
         self._asset.set_joint_position_target(self.processed_actions, joint_ids=self._joint_ids)
 
 
+class JointPositionActionSmooth(JointAction):
+    """Joint action term that applies the processed actions to the articulation's joints as position commands."""
+
+    cfg: actions_cfg.JointPositionActionSmoothCfg
+    """The configuration of the action term."""
+
+    def __init__(self, cfg: actions_cfg.JointPositionActionSmoothCfg, env: ManagerBasedEnv):
+        # initialize the action term
+        super().__init__(cfg, env)
+        # use default joint positions as offset
+        self._offset = 0.0
+
+    def apply_actions(self):
+        # set position targets
+        # print(f"{self._offset=}")
+        current_actions = 1.5 * torch.tanh(self.processed_actions) - 1.5
+        # current_actions = self.processed_actions
+        self._asset.set_joint_position_target(current_actions, joint_ids=self._joint_ids)
+
+
 class RelativeJointPositionAction(JointAction):
     r"""Joint action term that applies the processed actions to the articulation's joints as relative position commands.
 

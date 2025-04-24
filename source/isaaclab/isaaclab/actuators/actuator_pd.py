@@ -124,20 +124,85 @@ class IdealPDActuator(ActuatorBase):
     """
     Operations.
     """
+    def __init__(self, cfg: IdealPDActuator, *args, **kwargs):
+        super().__init__(cfg, *args, **kwargs)
+        # keep track of applied effort, current joint pos & desired joint pos
+        self.applied_effort_track = []
+        self.current_joint_pos_track = []
+        self.desired_joint_pos_track = []
+        self.last_pos_error = None
+        self.pos_error_track = []
 
     def reset(self, env_ids: Sequence[int]):
-        pass
+        if (len(self.applied_effort_track) > 0):
+            import numpy as np
+            import matplotlib.pyplot as plt
+            import pandas as pd
+
+            applied_efforts = self.applied_effort_track
+            current_joint_pos = self.current_joint_pos_track
+            desired_joint_pos = self.desired_joint_pos_track
+            error_pos = self.pos_error_track
+
+            applied_efforts = torch.cat(applied_efforts, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
+            current_joint_pos = torch.cat(current_joint_pos, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
+            desired_joint_pos = torch.cat(desired_joint_pos, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
+            error_pos = torch.cat(error_pos, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
+
+            time_steps = np.arange(len(desired_joint_pos))  
+            
+            # Save data to CSV
+            data = {
+                "time_steps": time_steps,
+                "applied_effort": applied_efforts[:, 0],
+                "current_joint_pos": current_joint_pos[:, 0],
+                "desired_joint_pos": desired_joint_pos[:, 0],
+                "error_pos": error_pos[:, 0],
+            }
+            df = pd.DataFrame(data)
+            df.to_csv("/home/shlok/osprey/osprey_train/source/osprey/osprey/tasks/test_env/actuator_response_gain_tuning.csv", index=False)
+            
+            # Plot data
+            fig, axes = plt.subplots(1, 1, figsize=(10, 8))
+            
+            # Plot Actions
+            axes.plot(time_steps, applied_efforts[:, 0], label="applied_effort")
+            axes.plot(time_steps, current_joint_pos[:, 0], label="current joint pos")
+            axes.plot(time_steps, desired_joint_pos[:, 0], label="desired joint pos")
+            axes.plot(time_steps, error_pos[:, 0], label="error pos")
+            axes.set_title("effort over time")
+            axes.set_xlabel("Time Steps")
+            axes.set_ylabel("effort / joint pos / error pos")
+            axes.legend()
+            axes.grid()
+            
+            fig.savefig("/home/shlok/osprey/osprey_train/source/osprey/osprey/tasks/test_env/actuator_response_gain_tuning.png")
+            
+            plt.tight_layout()
+            plt.show()
 
     def compute(
         self, control_action: ArticulationActions, joint_pos: torch.Tensor, joint_vel: torch.Tensor
     ) -> ArticulationActions:
         # compute errors
-        error_pos = control_action.joint_positions - joint_pos
+        error_pos = joint_pos - control_action.joint_positions
         error_vel = control_action.joint_velocities - joint_vel
         # calculate the desired joint torques
-        self.computed_effort = self.stiffness * error_pos + self.damping * error_vel + control_action.joint_efforts
+        # self.computed_effort = self.stiffness * error_pos + self.damping * error_vel + control_action.joint_efforts
+        
+        if self.last_pos_error is None:
+            self.last_pos_error = error_pos
+        self.computed_effort = - (self.stiffness * error_pos) - (self.damping * ((error_pos - self.last_pos_error) / 0.00333))
+        self.last_pos_error = error_pos
+
         # clip the torques based on the motor limits
         self.applied_effort = self._clip_effort(self.computed_effort)
+        
+        # log stuff
+        # self.applied_effort_track.append(self.applied_effort)
+        # self.current_joint_pos_track.append(joint_pos)
+        # self.desired_joint_pos_track.append(control_action.joint_positions)
+        # self.pos_error_track.append(error_pos)
         # set the computed actions back into the control action
         control_action.joint_efforts = self.applied_effort
         control_action.joint_positions = None
