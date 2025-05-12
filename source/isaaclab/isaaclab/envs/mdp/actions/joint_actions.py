@@ -175,9 +175,14 @@ class JointPositionActionSmooth(JointAction):
     def apply_actions(self):
         # set position targets
         # print(f"{self._offset=}")
-        current_actions = 1.5 * torch.tanh(self.processed_actions) - 1.5
+        # current_actions = 1.5 * torch.tanh(self.processed_actions) - 1.5
         # current_actions = self.processed_actions
+        current_actions = -1.57 + 0.785 * self.processed_actions
+        current_actions = torch.clamp(
+                current_actions, min=-3.14, max=0.0
+            )
         self._asset.set_joint_position_target(current_actions, joint_ids=self._joint_ids)
+        # pass
 
 
 class RelativeJointPositionAction(JointAction):
