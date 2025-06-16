@@ -720,7 +720,16 @@ class ArticulationData:
         This quantity is the angular acceleration of the rigid bodies' center of mass frame relative to the world.
         """
         return self.body_acc_w[..., 3:6]
+    
+    @property
+    def root_link_ang_acc_b(self) -> torch.Tensor:
+        """Angular acceleration of all bodies in simulation world frame. Shape is (num_instances, 1, 3).
 
+        This quantity is the angular acceleration of the rigid bodies' center of mass frame.
+        """
+        # ang_acc = self.body_acc_w[:, 0, 3:6]
+        # print(f"{self.body_acc_w[..., 3:6]=}")
+        return math_utils.quat_rotate_inverse(self.root_link_quat_w, self.body_acc_w[:, 0, 3:6])
     #
     # Link body properties
     #
