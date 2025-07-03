@@ -136,6 +136,7 @@ class IdealPDActuator(ActuatorBase):
         self.last_pos_error = None
         self.i_error = 0.0
         self.pos_error_track = []
+        self.joint_vel_track = []
 
     def reset(self, env_ids: Sequence[int]):
         if (len(self.applied_effort_track) > 0):
@@ -151,13 +152,14 @@ class IdealPDActuator(ActuatorBase):
             d_track = self.d_track
             i_track = self.i_track
 
-            applied_efforts = torch.cat(applied_efforts, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
+            applied_efforts = torch.cat(applied_efforts, dim=0).cpu().numpy()  
             current_joint_pos = torch.cat(current_joint_pos, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
             desired_joint_pos = torch.cat(desired_joint_pos, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
             error_pos = torch.cat(error_pos, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
             p_track = torch.cat(p_track, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
             d_track = torch.cat(d_track, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
             i_track = torch.cat(i_track, dim=0).cpu().numpy()  # Convert list of tensors to NumPy array
+            j_vel_track = torch.cat(self.joint_vel_track, dim=0).cpu().numpy() 
 
             time_steps = np.arange(len(desired_joint_pos))  
             
@@ -171,14 +173,16 @@ class IdealPDActuator(ActuatorBase):
                 "p_track": p_track[:, 0],
                 "d_track": d_track[:, 0],
                 "i_track": i_track[:, 0],
+                "joint_vel": j_vel_track[:, 0],
             }
             df = pd.DataFrame(data)
-            df.to_csv("/home/shlok/osprey/osprey_train/source/osprey/osprey/tasks/test_env/actuator_response_gain_tuning_stepresponse.csv", index=False)
+            df.to_csv("/home/shlok/osprey/test_logs/arm_v2/policy_indi.csv", index=False)
             
             # Plot data
             fig, axes = plt.subplots(1, 1, figsize=(10, 8))
             
             # Plot Actions
+            axes.plot(time_steps, j_vel_track[:, 0], label="joint vel")
             axes.plot(time_steps, applied_efforts[:, 0], label="applied_effort")
             axes.plot(time_steps, current_joint_pos[:, 0], label="current joint pos")
             axes.plot(time_steps, desired_joint_pos[:, 0], label="desired joint pos")
@@ -193,7 +197,7 @@ class IdealPDActuator(ActuatorBase):
             axes.legend()
             axes.grid()
             
-            fig.savefig("/home/shlok/osprey/osprey_train/source/osprey/osprey/tasks/test_env/actuator_response_gain_tuning_stepresponse.png")
+            fig.savefig("/home/shlok/osprey/test_logs/arm_v2/policy_indi.png")
             
             plt.tight_layout()
             plt.show()
@@ -223,6 +227,7 @@ class IdealPDActuator(ActuatorBase):
         self.applied_effort = self._clip_effort(self.computed_effort)
         
         # log stuff
+        # self.joint_vel_track.append(joint_vel)
         # self.applied_effort_track.append(self.applied_effort)
         # self.current_joint_pos_track.append(joint_pos)
         # self.desired_joint_pos_track.append(control_action.joint_positions)

@@ -151,7 +151,7 @@ class RewardManager(ManagerBase):
             self._reward_buf += value
             # update episodic sum
             self._episode_sums[name] += value
-            self.individual_rewards[name] = value
+            self.individual_rewards[name] = value / dt
 
             # Update current reward for this step.
             self._step_reward[:, self._term_names.index(name)] = value / dt
