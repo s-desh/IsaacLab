@@ -176,7 +176,7 @@ class IdealPDActuator(ActuatorBase):
                 "joint_vel": j_vel_track[:, 0],
             }
             df = pd.DataFrame(data)
-            df.to_csv("/home/shlok/osprey/test_logs/arm_v2/policy_indi.csv", index=False)
+            df.to_csv("/home/shlok/osprey/test_logs/arm_v3/policy/new.csv", index=False)
             
             # Plot data
             fig, axes = plt.subplots(1, 1, figsize=(10, 8))
@@ -197,7 +197,7 @@ class IdealPDActuator(ActuatorBase):
             axes.legend()
             axes.grid()
             
-            fig.savefig("/home/shlok/osprey/test_logs/arm_v2/policy_indi.png")
+            fig.savefig("/home/shlok/osprey/test_logs/arm_v3/policy/new.png")
             
             plt.tight_layout()
             plt.show()
@@ -218,7 +218,8 @@ class IdealPDActuator(ActuatorBase):
         p_term = self.stiffness * error_pos
         self.i_error += error_pos * dt
         i_term = 0.01 * self.i_error
-        d_term = self.damping * ((error_pos - self.last_pos_error) / dt)
+        # d_term = self.damping * ((error_pos - self.last_pos_error) / dt)
+        d_term = self.damping * (error_vel)
 
         self.computed_effort = p_term + i_term + d_term
         self.last_pos_error = error_pos
