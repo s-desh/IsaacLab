@@ -161,12 +161,12 @@ case $command in
         # make sure exports directory exists
         mkdir -p /$SCRIPT_DIR/exports
         # clear old exports for selected profile
-        rm -rf /$SCRIPT_DIR/exports/isaac-lab-$profile*
+        # rm -rf /$SCRIPT_DIR/exports/isaac-lab-$profile*
         # create singularity image
         # NOTE: we create the singularity image as non-root user to allow for more flexibility. If this causes
         # issues, remove the --fakeroot flag and open an issue on the IsaacLab repository.
         cd /$SCRIPT_DIR/exports
-        APPTAINER_NOHTTPS=1 apptainer build --sandbox --fakeroot isaac-lab-$profile.sif docker-daemon://isaac-lab-$profile:latest
+        APPTAINER_NOHTTPS=1 apptainer build --sandbox isaac-lab-$profile.sif docker-daemon://isaac-lab-$profile:latest
         # tar image (faster to send single file as opposed to directory with many files)
         tar -cvf /$SCRIPT_DIR/exports/isaac-lab-$profile.tar isaac-lab-$profile.sif
         # make sure target directory exists
@@ -177,7 +177,7 @@ case $command in
     job)
         if [ $# -ge 1 ]; then
             passed_profile=$1
-            if [ -f "$SCRIPT_DIR/../.env.$passed_profile" ]; then
+            if [ -f "$SCRIPT_DIR/.env.$passed_profile" ]; then
                 profile=$passed_profile
                 shift
             fi
@@ -188,16 +188,19 @@ case $command in
         [ -n "$job_args" ] && echo -e "\tJob arguments: $job_args"
         source $SCRIPT_DIR/.env.cluster
         # Get current date and time
-        current_datetime=$(date +"%Y%m%d_%H%M%S")
-        # Append current date and time to CLUSTER_ISAACLAB_DIR
-        CLUSTER_ISAACLAB_DIR="${CLUSTER_ISAACLAB_DIR}_${current_datetime}"
+        # current_datetime=$(date +"%Y%m%d_%H%M%S")
+        # # Append current date and time to CLUSTER_ISAACLAB_DIR
+        # CLUSTER_ISAACLAB_TEMPLATE_DIR="${CLUSTER_ISAACLAB_TEMPLATE_DIR}_${current_datetime}"
         # Check if singularity image exists on the remote host
-        check_singularity_image_exists isaac-lab-$profile
+        # check_singularity_image_exists isaac-lab-$profile
         # make sure target directory exists
         ssh $CLUSTER_LOGIN "mkdir -p $CLUSTER_ISAACLAB_DIR"
         # Sync Isaac Lab code
         echo "[INFO] Syncing Isaac Lab code..."
-        rsync -rh  --exclude="*.git*" --filter=':- .dockerignore'  /$SCRIPT_DIR/../.. $CLUSTER_LOGIN:$CLUSTER_ISAACLAB_DIR
+        rsync -rh  --exclude="*.git*" --filter=':- .dockerignore'  /$SCRIPT_DIR/../../ $CLUSTER_LOGIN:$CLUSTER_ISAACLAB_DIR
+        # Sync Isaac Lab TEMPLATE code
+        echo "[INFO] Syncing Osprey train code..."
+        rsync -rh  --exclude="*.git*" --filter=':- .dockerignore'  /$SCRIPT_DIR/../../../osprey_train/ $CLUSTER_LOGIN:$CLUSTER_ISAACLAB_TEMPLATE_DIR        
         # execute job script
         echo "[INFO] Executing job script..."
         # check whether the second argument is a profile or a job argument

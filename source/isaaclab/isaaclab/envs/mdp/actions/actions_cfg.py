@@ -50,6 +50,22 @@ class JointPositionActionCfg(JointActionCfg):
     from the articulation asset.
     """
 
+@configclass
+class JointPositionActionSmoothCfg(JointActionCfg):
+    """Configuration for the joint position action term.
+
+    See :class:`JointPositionAction` for more details.
+    """
+
+    class_type: type[ActionTerm] = joint_actions.JointPositionActionSmooth
+
+    use_default_offset: bool = False
+    """Whether to use default joint positions configured in the articulation asset as offset.
+    Defaults to True.
+
+    If True, this flag results in overwriting the values of :attr:`offset` to the default joint positions
+    from the articulation asset.
+    """
 
 @configclass
 class RelativeJointPositionActionCfg(JointActionCfg):
